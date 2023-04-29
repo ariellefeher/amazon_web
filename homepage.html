@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Amazon Price Comparison</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<h1>Amazon Price Comparison</h1>
+<label for="searchInput">Search:</label>
+<input type="text" id="searchInput">
+<button id="searchButton">Search</button>
+<table id="resultsTable">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Rating</th>
+    <th>Price (Amazon.com)</th>
+    <th>Price (Amazon.co.uk)</th>
+    <th>Price (Amazon.de)</th>
+    <th>Price (Amazon.ca)</th>
+  </tr>
+  </thead>
+  <tbody id="resultsBody"></tbody>
+</table>
+
+<script>
+
+  $(document).ready(function() {
+    // Send a POST request to the backend endpoin
+    $.post('main.py', {data: 'Hello from frontend!'}, function(response) {
+      // Handle the response from the backend
+      console.log(response);
+    }).fail(function(error) {
+      // Handle any errors that occur during the request
+      console.error(error);
+    });
+    $('#searchButton').click(function() {
+      search();
+    });
+  });
+
+  // Function to make search request to backend API
+  function search() {
+    var query = $('#searchInput').val();
+    $.post('/search', {query: query}, function(data) {
+      displayResults(data);
+    }).fail(function(error) {
+      console.log(error);
+    });
+  }
+
+  // Function to display search results in the table
+  function displayResults(results) {
+    var tableBody = $('#resultsBody');
+    tableBody.empty();
+    if (results.length === 0) {
+      tableBody.append('<tr><td colspan="6">No results found</td></tr>');
+    } else {
+      for (var i = 0; i < results.length; i++) {
+        var row = '<tr>' +
+                '<td>' + results[i].title + '</td>' +
+                '<td>' + results[i].rating + '</td>' +
+                '<td>' + results[i].asin + '</td>' +
+                '<td class="price-amazoncom">' + results[i].price + '</td>' +
+                '<td class="price-amazonuk"></td>' +
+                '<td class="price-amazonde"></td>' +
+                '<td class="price-amazonca"></td>' +
+                '</tr>';
+        tableBody.append(row);
+      }
+      getPrices(results);
+    }
+  }
+
+  // Function to get prices from backend API
+  function getPrices(results) {
+    for (var i = 0; i < results.length; i++) {
+      var asin = results[i].asin;
+      $.get('/price/' + asin, function(data) {
+        updatePrice(data);
+      }).fail(function(error) {
+        console.log(error);
+      });
+    }
+  }
+
+  // Function to update prices in the table
+  function updatePrice(data) {
+  $('#resultsBody td.price-amazoncom:contains(' + data.Item + ')').text(data['Amazon.com']);
+  $('#resultsBody td.price-amazonuk:contains(' + data.Item + ')').text(data['Amazon.co.uk']);
+  $('#resultsBody td.price-amazonde:contains(' + data.Item + ')').text(data['Amazon.de']);
+  $('#resultsBody td.price-amazonca:contains(' + data.Item + ')').text(data['Amazon.ca']);
+}
+
+
+  // Add click event handler to search button
+  $('#searchButton').click(function() {
+    search();
+  });
+</script>
+
+</body>
+</html>
