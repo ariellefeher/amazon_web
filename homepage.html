@@ -14,10 +14,10 @@
   <tr>
     <th>Name</th>
     <th>Rating</th>
-    <th>Price (Amazon.com)</th>
-    <th>Price (Amazon.co.uk)</th>
-    <th>Price (Amazon.de)</th>
-    <th>Price (Amazon.ca)</th>
+    <th>Price USA</th>
+    <th>Price UK</th>
+    <th>Price GER</th>
+    <th>Price CAN</th>
   </tr>
   </thead>
   <tbody id="resultsBody"></tbody>
@@ -51,7 +51,7 @@
 
   // Function to display search results in the table
   function displayResults(results) {
-    var tableBody = $('#resultsBody');
+    var tableBody = $('#search_results');
     tableBody.empty();
     if (results.length === 0) {
       tableBody.append('<tr><td colspan="6">No results found</td></tr>');
@@ -61,7 +61,7 @@
                 '<td>' + results[i].title + '</td>' +
                 '<td>' + results[i].rating + '</td>' +
                 '<td>' + results[i].asin + '</td>' +
-                '<td class="price-amazoncom">' + results[i].price + '</td>' +
+                '<td class="price-amazoncom">' + results[i].price_usd + '</td>' +
                 '<td class="price-amazonuk"></td>' +
                 '<td class="price-amazonde"></td>' +
                 '<td class="price-amazonca"></td>' +

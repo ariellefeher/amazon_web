@@ -31,24 +31,24 @@ max_searches_per_day = 10
 user_search_counts = {}
 
 # Middleware to track user search counts
-# @app.middleware("http")
-# async def track_user_search_counts(request, call_next):
-#     now = datetime.now().date().isoformat()
-#     # print("request: ", request)
-#     if request.url.path == "/search" and request.method == "POST":
-#         ip = request.client.host
-#         if ip not in user_search_counts:
-#             user_search_counts[ip] = {now: 0}
-#         elif now not in user_search_counts[ip]:
-#             user_search_counts[ip][now] = 0
-#         user_search_counts[ip][now] += 1
+@app.middleware("http")
+async def track_user_search_counts(request, call_next):
+    now = datetime.now().date().isoformat()
+    # print("request: ", request)
+    if request.url.path == "/search" and request.method == "POST":
+        ip = request.client.host
+        if ip not in user_search_counts:
+            user_search_counts[ip] = {now: 0}
+        elif now not in user_search_counts[ip]:
+            user_search_counts[ip][now] = 0
+        user_search_counts[ip][now] += 1
 
-#         # Check if user has exceeded the maximum number of searches per day
-#         if user_search_counts[ip][now] > max_searches_per_day:
-#             return JSONResponse(content={"error": "Search limit exceeded for today"}, status_code=429)
+        # Check if user has exceeded the maximum number of searches per day
+        if user_search_counts[ip][now] > max_searches_per_day:
+            return JSONResponse(content={"error": "Search limit exceeded for today"}, status_code=429)
 
-#     response = await call_next(request)
-#     return response
+    response = await call_next(request)
+    return response
 
 headers = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -106,15 +106,15 @@ async def search(request_body: dict):
 
         asin_element = result.get("data-asin")
 
-        image_element = result.find("div", {"class": "a-section aok-relative s-image-square-aspect"})
-        print("Image Element Found") if image_element else print("Image Not Found")     
+        # image_element = result.find("img", {"class": "a-section aok-relative s-image-square-aspect"})
+        image_element = result.find("img", {"class": "s-image"})   
         
-        if title_element and rating_element and asin_element and price_element:
+        if title_element and rating_element and asin_element and price_element and image_element:
             title = title_element.text
             print("Title Element: " + title)
                 
             rating = float(rating_element.text.split()[0])
-            print("Rating" + str(rating))
+            print("Rating: " + str(rating))
 
             asin = asin_element
             print("ASIN Element: " + asin_element)
@@ -122,7 +122,10 @@ async def search(request_body: dict):
             price_usd = float(price_element.text.replace(",", ""))
             print("Price USD: " + str(price_usd))
 
-            search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd})
+            image_link = image_element['src']
+            print("Image Link: " + image_link)
+
+            search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
  
     # Return search results as JSON response
     return JSONResponse(content=search_results)
