@@ -5,99 +5,138 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-<h1>Amazon Price Comparison</h1>
-<label for="searchInput">Search:</label>
-<input type="text" id="searchInput">
-<button id="searchButton">Search</button>
+  <h1>Amazon Price Comparison</h1>
+  
+  <a class="nav-link" href="pastsearches.html">Past Searches</a><br><br>
+
+  <label for="searchText">Search Item:</label><br>
+
+<form id="searchForm">
+  <input type="text" id="searchInput">
+ <button type="submit">Search</button>
+</form>
+ <br> <br>
+
 <table id="resultsTable">
   <thead>
   <tr>
     <th>Name</th>
-    <th>Rating</th>
-    <th>Price USA</th>
+    <!-- <th>Rating</th> -->
+    <th>Image</th>
+    <!-- <th>Price USA</th>
     <th>Price UK</th>
     <th>Price GER</th>
-    <th>Price CAN</th>
+    <th>Price CAN</th> -->
   </tr>
   </thead>
-  <tbody id="resultsBody"></tbody>
 </table>
-
 <script>
-
-  $(document).ready(function() {
-    // Send a POST request to the backend endpoin
-    $.post('main.py', {data: 'Hello from frontend!'}, function(response) {
-      // Handle the response from the backend
-      console.log(response);
-    }).fail(function(error) {
-      // Handle any errors that occur during the request
-      console.error(error);
-    });
-    $('#searchButton').click(function() {
-      search();
-    });
+  
+document.getElementById("searchForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const inputText = document.getElementById("searchInput").value;
+  const response = await fetch("http://127.0.0.1:8000/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({query: inputText}),
   });
+  const data = await response.json();
+  displayResults(data.data);
+});
 
-  // Function to make search request to backend API
-  function search() {
-    var query = $('#searchInput').val();
-    $.post('/search', {query: query}, function(data) {
-      displayResults(data);
-    }).fail(function(error) {
-      console.log(error);
-    });
+function displayResults(results) {
+  const table = document.getElementById("resultsTable");
+  const tbody = document.createElement("tbody");
+  
+  // Clear existing rows, if any
+  while (table.firstChild) {
+    table.removeChild(table.firstChild);
   }
+  
+  // Add header row to the table
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th>Name</th>
+      <!-- <th>Rating</th> -->
+      <th>Image</th>
+      <!-- <th>Price USA</th>
+      <th>Price UK</th>
+      <th>Price GER</th>
+      <th>Price CAN</th> -->
+    </tr>
+  `;
+  table.appendChild(thead);
+  
+  // Add rows to the table
+  results.forEach((result, inx) => {
+    const row = document.createElement("tr");
+    
+    const nameCell = document.createElement("td");
+    const nameButton = document.createElement("button");
+    nameButton.textContent = result.title;
+    nameButton.id = inx + "btn";
+    nameButton.addEventListener("click", onButtonClick);
+    nameCell.appendChild(nameButton);
+    row.appendChild(nameCell);
 
-  // Function to display search results in the table
-  function displayResults(results) {
-    var tableBody = $('#search_results');
-    tableBody.empty();
-    if (results.length === 0) {
-      tableBody.append('<tr><td colspan="6">No results found</td></tr>');
-    } else {
-      for (var i = 0; i < results.length; i++) {
-        var row = '<tr>' +
-                '<td>' + results[i].title + '</td>' +
-                '<td>' + results[i].rating + '</td>' +
-                '<td>' + results[i].asin + '</td>' +
-                '<td class="price-amazoncom">' + results[i].price_usd + '</td>' +
-                '<td class="price-amazonuk"></td>' +
-                '<td class="price-amazonde"></td>' +
-                '<td class="price-amazonca"></td>' +
-                '</tr>';
-        tableBody.append(row);
-      }
-      getPrices(results);
-    }
-  }
+    const imageCell = document.createElement("td");
+    const image = document.createElement("img");
+    image.src = result.image_link;
+    image.width = 64;
+    image.height = 64;
+    imageCell.appendChild(image);
+    row.appendChild(imageCell);
 
-  // Function to get prices from backend API
-  function getPrices(results) {
-    for (var i = 0; i < results.length; i++) {
-      var asin = results[i].asin;
-      $.get('/price/' + asin, function(data) {
-        updatePrice(data);
-      }).fail(function(error) {
-        console.log(error);
-      });
-    }
-  }
-
-  // Function to update prices in the table
-  function updatePrice(data) {
-  $('#resultsBody td.price-amazoncom:contains(' + data.Item + ')').text(data['Amazon.com']);
-  $('#resultsBody td.price-amazonuk:contains(' + data.Item + ')').text(data['Amazon.co.uk']);
-  $('#resultsBody td.price-amazonde:contains(' + data.Item + ')').text(data['Amazon.de']);
-  $('#resultsBody td.price-amazonca:contains(' + data.Item + ')').text(data['Amazon.ca']);
+    tbody.appendChild(row);
+  });
+  
+  table.appendChild(tbody);
 }
 
 
-  // Add click event handler to search button
-  $('#searchButton').click(function() {
-    search();
-  });
+  // tableBody.innerHTML = "";
+  // if (results.length === 0) {
+  //   tableBody.innerHTML = "<tr><td colspan='7'>No results found</td></tr>";
+  // } else {
+  //   results.forEach((result, inx) => {
+  //     const row = "<tr>" +
+  //             "<td>" + result.title + "</td>" +
+  //             "<td>" + result.rating + "</td>" +
+  //             "<td><img src='" + result.image_link + "'/></td>" +
+  //             "<td class='price_usd'>" + result.price_usd + "</td>" +
+  //             "<td class='price_uk'></td>" +
+  //             "<td class='price_ger'></td>" +
+  //             "<td class='price_can'></td>" +
+  //             "</tr>";
+  //     tableBody.innerHTML += row;
+  //     getPrices(results[i].asin);
+  //   });
+  // }
+
+
+async function getPrices(asin) {
+  const response = await fetch("/prices/" + asin);
+  const data = await response.json();
+  updatePrice(data);
+}
+
+function updatePrice(data) {
+  var tableRows = document.getElementById("resultsBody").getElementsByTagName("tr");
+  for (var i = 0; i < tableRows.length; i++) {
+    var asin = tableRows[i].getElementsByTagName("td")[2].textContent;
+    if (asin === data.asin) {
+      tableRows[i].getElementsByClassName("price_uk")[0].textContent = data.price_uk;
+      tableRows[i].getElementsByClassName("price_ger")[0].textContent = data.price_ger;
+      tableRows[i].getElementsByClassName("price_can")[0].textContent = data.price_can;
+    }
+  }
+}
+
+
+
 </script>
+
 
 </body>
 </html>

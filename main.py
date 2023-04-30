@@ -37,10 +37,13 @@ async def track_user_search_counts(request, call_next):
     # print("request: ", request)
     if request.url.path == "/search" and request.method == "POST":
         ip = request.client.host
+
         if ip not in user_search_counts:
             user_search_counts[ip] = {now: 0}
+
         elif now not in user_search_counts[ip]:
             user_search_counts[ip][now] = 0
+
         user_search_counts[ip][now] += 1
 
         # Check if user has exceeded the maximum number of searches per day
@@ -70,30 +73,31 @@ async def search(request_body: dict):
         return JSONResponse(content={"error": "Request body required"}, status_code=400)
     
     # Make request to Amazon.com search page with the given query
-    ### url encode the input value (search_item)
     encoded_search_item = urllib.parse.quote(search_item)
     url = f"https://www.amazon.com/s?k={encoded_search_item}"
+
     response = requests.get(url, headers=headers)
     print("response status code: ", response.status_code)
     print("response content: ", response.text[:100])
-    # # work on mockup html data
-    # response_mockup_path = "/Users/ariel/Downloads/mockup.txt"
-    # with open(response_mockup_path, "w") as fh:
-    #     fh.write(response.text)
-
-    # response_text_mockup = ""
-    # with open(response_mockup_path, "r") as fh:
-    #     response_text_mockup = fh.read()
     
+        # # DEBUG:  work on mockup html data to avoid sending too many request to Amazon 
+        # response_mockup_path = "/Users/ariel/Downloads/mockup.txt"
+        # with open(response_mockup_path, "w") as fh:
+        #     fh.write(response.text)
+
+        # response_text_mockup = ""
+        # with open(response_mockup_path, "r") as fh:
+        #     response_text_mockup = fh.read()
+        
+        # soup = BeautifulSoup(response_text_mockup, "html.parser")
+
     # Parse the HTML response
-    # soup = BeautifulSoup(response_text_mockup, "html.parser")
     soup = BeautifulSoup(response.text, "html.parser")
     if not soup:
         print("Error in Soup parsing")
 
     # Extract the top 10 product titles, ratings, and ASINs
     results = soup.find_all("div",{"class": "s-result-item"})
-    # results = soup.find_all("div", class)
     print("results: ", len(results))
 
     search_results = []
@@ -106,7 +110,6 @@ async def search(request_body: dict):
 
         asin_element = result.get("data-asin")
 
-        # image_element = result.find("img", {"class": "a-section aok-relative s-image-square-aspect"})
         image_element = result.find("img", {"class": "s-image"})   
         
         if title_element and rating_element and asin_element and price_element and image_element:
@@ -125,8 +128,8 @@ async def search(request_body: dict):
             image_link = image_element['src']
             print("Image Link: " + image_link)
 
-            # search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
-            search_results.append(Amazon_Item(title, rating, asin, price_usd, image_link))
+            search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
+            # search_results.append(Amazon_Item(title, rating, asin, price_usd, image_link))
  
     # Return search results as JSON response
     return JSONResponse(content=search_results)
@@ -172,15 +175,15 @@ async def prices(request_body: dict):
 
     # print("Price in US: " + str(price_usa))
 
-    prices["Amazon.co.uk"] = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
-    print("Price in UK: " + str(prices["Amazon.co.uk"])) 
+    prices["price_uk"] = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
+    print("Price in UK: " + str(prices["price_uk"])) 
     # prices["Amazon.co.uk"] = None
 
-    prices["Amazon.de"] = convert_to_usd(price_de, "EUR") if price_de else "Not Found"
-    print("Price in DE: " + str(prices["Amazon.de"]))
+    prices["price_de"] = convert_to_usd(price_de, "EUR") if price_de else "Not Found"
+    print("Price in DE: " + str(prices["price_de"]))
 
-    prices["Amazon.ca"] = convert_to_usd(price_ca, "CAD") if price_ca else "Not Found"
-    print("Price in CA: " + str(prices["Amazon.ca"]))
+    prices["price_ca"] = convert_to_usd(price_ca, "CAD") if price_ca else "Not Found"
+    print("Price in CA: " + str(prices["price_ca"]))
 
     search_results.append({"prices": prices})
     
