@@ -46,11 +46,9 @@ document.getElementById("searchForm").addEventListener("submit", async (event) =
 
 function displayResults(results) {
   const table = document.getElementById("resultsTable");
-  const tbody = document.createElement("tbody");
-  
-  // Clear existing rows, if any
-  while (table.firstChild) {
-    table.removeChild(table.firstChild);
+  const tbody = table.querySelector("tbody");
+  if (tbody) {
+    table.removeChild(tbody);
   }
   
   // Add header row to the table
@@ -58,12 +56,12 @@ function displayResults(results) {
   thead.innerHTML = `
     <tr>
       <th>Name</th>
-      <!-- <th>Rating</th> -->
+      <th>Rating</th>
       <th>Image</th>
-      <!-- <th>Price USA</th>
+      <th>Price USA</th>
       <th>Price UK</th>
       <th>Price GER</th>
-      <th>Price CAN</th> -->
+      <th>Price CAN</th>
     </tr>
   `;
   table.appendChild(thead);
@@ -76,10 +74,15 @@ function displayResults(results) {
     const nameButton = document.createElement("button");
     nameButton.textContent = result.title;
     nameButton.id = inx + "btn";
-    nameButton.addEventListener("click", onButtonClick);
+    nameButton.addEventListener("click", getPrices);
     nameCell.appendChild(nameButton);
     row.appendChild(nameCell);
 
+    const rating = document.createElement("td");
+    rating.textContent = result.rating;
+    row.appendChild(rating);
+
+    
     const imageCell = document.createElement("td");
     const image = document.createElement("img");
     image.src = result.image_link;
@@ -87,11 +90,54 @@ function displayResults(results) {
     image.height = 64;
     imageCell.appendChild(image);
     row.appendChild(imageCell);
+    
+    const com = document.createElement("td");
+    com.textContent = result.price.com;
+    row.appendChild(com);
 
     tbody.appendChild(row);
   });
   
   table.appendChild(tbody);
+}
+
+async function getPrices(event) {
+    const list_item_index = parseInt(event.target.id);
+    const response = await fetch("http://127.0.0.1:8000/prices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({query: inputText}),
+  });
+  const data = await response.json();
+    updatePrices(data.data);
+}
+
+
+function updatePrices(result) {
+    const table = document.getElementById("second-result-table");
+    table.innerHTML = `
+        <tr>
+            <th>Price UK</th>
+            <th>Price GER</th>
+            <th>Price CAN</th>
+        </tr>
+        <tr>
+        </tr>
+    `;
+    const row = table.rows[1];
+    
+    const price_uk = document.createElement("td");
+    price_uk.textContent = result.price_uk;
+    row.appendChild(price_uk);
+
+    const price_de = document.createElement("td");
+    price_de.textContent = result.price_de;
+    row.appendChild(price_de);
+
+    const price_ca = document.createElement("td");
+    price_ca.textContent = result.price_ca;
+    row.appendChild(price_ca);
+
 }
 
 
@@ -114,29 +160,6 @@ function displayResults(results) {
   //   });
   // }
 
-
-async function getPrices(asin) {
-  const response = await fetch("/prices/" + asin);
-  const data = await response.json();
-  updatePrice(data);
-}
-
-function updatePrice(data) {
-  var tableRows = document.getElementById("resultsBody").getElementsByTagName("tr");
-  for (var i = 0; i < tableRows.length; i++) {
-    var asin = tableRows[i].getElementsByTagName("td")[2].textContent;
-    if (asin === data.asin) {
-      tableRows[i].getElementsByClassName("price_uk")[0].textContent = data.price_uk;
-      tableRows[i].getElementsByClassName("price_ger")[0].textContent = data.price_ger;
-      tableRows[i].getElementsByClassName("price_can")[0].textContent = data.price_can;
-    }
-  }
-}
-
-
-
 </script>
-
-
 </body>
 </html>
