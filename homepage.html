@@ -19,15 +19,15 @@
 
 <table id="resultsTable">
   <thead>
-  <tr>
-    <th>Name</th>
-    <!-- <th>Rating</th> -->
-    <th>Image</th>
-    <!-- <th>Price USA</th>
-    <th>Price UK</th>
-    <th>Price GER</th>
-    <th>Price CAN</th> -->
-  </tr>
+<!--  <tr>-->
+<!--    <th>Name</th>-->
+<!--    &lt;!&ndash; <th>Rating</th> &ndash;&gt;-->
+<!--    <th>Image</th>-->
+<!--    &lt;!&ndash; <th>Price USA</th>-->
+<!--    <th>Price UK</th>-->
+<!--    <th>Price GER</th>-->
+<!--    <th>Price CAN</th> &ndash;&gt;-->
+<!--  </tr>-->
   </thead>
 </table>
 <script>
@@ -41,65 +41,122 @@ document.getElementById("searchForm").addEventListener("submit", async (event) =
       body: JSON.stringify({query: inputText}),
   });
   const data = await response.json();
-  displayResults(data.data);
-});
+  console.log(data)
+  const searchResults = data.results;
 
+   displayResults(searchResults);
+});
 function displayResults(results) {
-  const table = document.getElementById("resultsTable");
-  const tbody = table.querySelector("tbody");
-  if (tbody) {
-    table.removeChild(tbody);
-  }
-  
-  // Add header row to the table
-  const thead = document.createElement("thead");
-  thead.innerHTML = `
+    const table = document.getElementById("resultsTable");
+    const tbody = table.querySelector("tbody");
+    if (tbody) {
+        table.removeChild(tbody);
+    }
+
+    // Add header row to the table
+    const thead = document.createElement("thead");
+    thead.innerHTML = `
     <tr>
-      <th>Name</th>
+      <th>Title</th>
       <th>Rating</th>
+      <th>ASIN</th>
+      <th>Price (USD)</th>
       <th>Image</th>
-      <th>Price USA</th>
-      <th>Price UK</th>
-      <th>Price GER</th>
-      <th>Price CAN</th>
     </tr>
   `;
-  table.appendChild(thead);
-  
-  // Add rows to the table
-  results.forEach((result, inx) => {
-    const row = document.createElement("tr");
-    
-    const nameCell = document.createElement("td");
-    const nameButton = document.createElement("button");
-    nameButton.textContent = result.title;
-    nameButton.id = inx + "btn";
-    nameButton.addEventListener("click", getPrices);
-    nameCell.appendChild(nameButton);
-    row.appendChild(nameCell);
+    table.appendChild(thead);
 
-    const rating = document.createElement("td");
-    rating.textContent = result.rating;
-    row.appendChild(rating);
+    // Add rows to the table
+    const tbodyNew = document.createElement("tbody");
+    results.forEach((result) => {
+        const row = document.createElement("tr");
 
-    
-    const imageCell = document.createElement("td");
-    const image = document.createElement("img");
-    image.src = result.image_link;
-    image.width = 64;
-    image.height = 64;
-    imageCell.appendChild(image);
-    row.appendChild(imageCell);
-    
-    const com = document.createElement("td");
-    com.textContent = result.price.com;
-    row.appendChild(com);
+        const titleCell = document.createElement("td");
+        titleCell.textContent = result.title;
+        row.appendChild(titleCell);
 
-    tbody.appendChild(row);
-  });
-  
-  table.appendChild(tbody);
+        const ratingCell = document.createElement("td");
+        ratingCell.textContent = result.rating;
+        row.appendChild(ratingCell);
+
+        const asinCell = document.createElement("td");
+        asinCell.textContent = result.asin;
+        row.appendChild(asinCell);
+
+        const priceUsdCell = document.createElement("td");
+        priceUsdCell.textContent = result.price_usd;
+        row.appendChild(priceUsdCell);
+
+        const imageCell = document.createElement("td");
+        const image = document.createElement("img");
+        image.src = result.image_link;
+        image.width = 64;
+        image.height = 64;
+        imageCell.appendChild(image);
+        row.appendChild(imageCell);
+
+        tbodyNew.appendChild(row);
+    });
+
+    table.appendChild(tbodyNew);
 }
+
+// function displayResults(results) {
+//   const table = document.getElementById("resultsTable");
+//   const tbody = table.querySelector("tbody");
+//   if (tbody) {
+//     table.removeChild(tbody);
+//   }
+//
+//   // Add header row to the table
+//   const thead = document.createElement("thead");
+//   thead.innerHTML = `
+//     <tr>
+//       <th>Name</th>
+//       <th>Rating</th>
+//       <th>Image</th>
+//       <th>Price USA</th>
+//       <th>Price UK</th>
+//       <th>Price GER</th>
+//       <th>Price CAN</th>
+//     </tr>
+//   `;
+//   table.appendChild(thead);
+//
+//   // Add rows to the table
+//   results.forEach((result, inx) => {
+//     const row = document.createElement("tr");
+//
+//     const nameCell = document.createElement("td");
+//     const nameButton = document.createElement("button");
+//     nameButton.textContent = result.title;
+//     nameButton.id = inx + "btn";
+//     nameButton.addEventListener("click", getPrices);
+//     nameCell.appendChild(nameButton);
+//     row.appendChild(nameCell);
+//
+//     const rating = document.createElement("td");
+//     rating.textContent = result.rating;
+//     row.appendChild(rating);
+//
+//
+//     const imageCell = document.createElement("td");
+//     const image = document.createElement("img");
+//     image.src = result.image_link;
+//     image.width = 64;
+//     image.height = 64;
+//     imageCell.appendChild(image);
+//     row.appendChild(imageCell);
+//
+//     const price_usd = document.createElement("td");
+//     price_usd.textContent = result.price_usd;
+//     row.appendChild(price_usd);
+//
+//     tbody.appendChild(row);
+//   });
+//
+//   table.appendChild(tbody);
+// }
 
 async function getPrices(event) {
     const list_item_index = parseInt(event.target.id);
@@ -109,7 +166,7 @@ async function getPrices(event) {
       body: JSON.stringify({query: inputText}),
   });
   const data = await response.json();
-    updatePrices(data.data);
+    updatePrices(data.content);
 }
 
 

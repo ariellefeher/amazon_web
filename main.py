@@ -132,7 +132,10 @@ async def search(request_body: dict):
             # search_results.append(Amazon_Item(title, rating, asin, price_usd, image_link))
  
     # Return search results as JSON response
-    return JSONResponse(content=search_results)
+    print(type(search_results))
+    print(search_results)
+    return JSONResponse(content={"results": search_results})
+    # return JSONResponse(content=search_results)
 
 @app.post("/prices")
 async def prices(request_body: dict):
