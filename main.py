@@ -125,7 +125,8 @@ async def search(request_body: dict):
             image_link = image_element['src']
             print("Image Link: " + image_link)
 
-            search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
+            # search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
+            search_results.append(Amazon_Item(title, rating, asin, price_usd, image_link))
  
     # Return search results as JSON response
     return JSONResponse(content=search_results)
@@ -171,9 +172,9 @@ async def prices(request_body: dict):
 
     # print("Price in US: " + str(price_usa))
 
-    # prices["Amazon.co.uk"] = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
-    # print("Price in UK: " + str(prices["Amazon.co.uk"]))
-    prices["Amazon.co.uk"] = None
+    prices["Amazon.co.uk"] = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
+    print("Price in UK: " + str(prices["Amazon.co.uk"])) 
+    # prices["Amazon.co.uk"] = None
 
     prices["Amazon.de"] = convert_to_usd(price_de, "EUR") if price_de else "Not Found"
     print("Price in DE: " + str(prices["Amazon.de"]))
@@ -186,6 +187,21 @@ async def prices(request_body: dict):
 
 def convert_to_usd(price: float, country: str) -> float:
     c = CurrencyRates()
-    rate = c.get_rate(country, 'USD')
-    return price * rate
+    date = datetime.now()
+    while True:
+        try:
+            rate = c.get_rate(country, 'USD', date)
+            return price * rate
+        
+        except Exception as e:
+            date = timedelta(days = 1)
+    
+
+class Amazon_Item:
+    def __init__(self, title, rating, asin, price_usd, image_link):
+        self.title = title
+        self.rating = rating
+        self.asin = asin
+        self.price_usd = price_usd
+        self.image_link = image_link
 
