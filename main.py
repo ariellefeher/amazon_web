@@ -145,7 +145,7 @@ async def prices(request_body: dict):
         return JSONResponse(content={"error": "Request body required"}, status_code=400)
    
     #PRICE COMPARISON: Extract prices from Amazon.co.uk, Amazon.de, and Amazon.ca
-    prices = {}
+    prices = []
     # url_usa =  f"https://www.amazon.com/dp/{asin}"      
     url_uk = f"https://www.amazon.co.uk/dp/{asin}"
     url_de = f"https://www.amazon.de/dp/{asin}"
@@ -178,17 +178,17 @@ async def prices(request_body: dict):
 
     # print("Price in US: " + str(price_usa))
 
-    prices["price_uk"] = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
-    print("Price in UK: " + str(prices["price_uk"])) 
-    # prices["Amazon.co.uk"] = None
+    final_price_uk = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
+    print("Price in UK: " + str(final_price_uk)) 
 
-    prices["price_de"] = convert_to_usd(price_de, "EUR") if price_de else "Not Found"
-    print("Price in DE: " + str(prices["price_de"]))
+    final_price_de= convert_to_usd(price_de, "EUR") if price_de else "Not Found"
+    print("Price in DE: " + str(final_price_de))
 
-    prices["price_ca"] = convert_to_usd(price_ca, "CAD") if price_ca else "Not Found"
-    print("Price in CA: " + str(prices["price_ca"]))
+    final_price_ca = convert_to_usd(price_ca, "CAD") if price_ca else "Not Found"
+    print("Price in CA: " + str(final_price_ca))
 
-    search_results.append({"prices": prices})
+    # prices.append({"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca})
+    return JSONResponse(content={"results": {"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca}})
     
 
 def convert_to_usd(price: float, country: str) -> float:

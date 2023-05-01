@@ -19,17 +19,14 @@
 
 <table id="resultsTable">
   <thead>
-<!--  <tr>-->
-<!--    <th>Name</th>-->
-<!--    &lt;!&ndash; <th>Rating</th> &ndash;&gt;-->
-<!--    <th>Image</th>-->
-<!--    &lt;!&ndash; <th>Price USA</th>-->
-<!--    <th>Price UK</th>-->
-<!--    <th>Price GER</th>-->
-<!--    <th>Price CAN</th> &ndash;&gt;-->
-<!--  </tr>-->
   </thead>
 </table>
+
+<table id="priceTable">
+  <thead>
+  </thead>
+</table>
+
 <script>
   
 document.getElementById("searchForm").addEventListener("submit", async (event) => {
@@ -102,7 +99,7 @@ function displayResults(results) {
         const button = document.createElement("button");
         button.textContent = "Get Prices";
         button.addEventListener("click", () => {
-            getPrices(result.asin);
+            getPrices(result.asin, result.price_usd);
         });
         imageDiv.appendChild(button);
 
@@ -115,76 +112,58 @@ function displayResults(results) {
     table.appendChild(tbodyNew);
 }
 
-async function getPrices(asin) {
+async function getPrices(asin, price_usd) {
     const response = await fetch("http://127.0.0.1:8000/prices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({query: asin}),
   });
   const data = await response.json();
-    updatePrices(data.results);
-
-  //   event.preventDefault();
-  // const inputText = document.getElementById("searchInput").value;
-  // const response = await fetch("http://127.0.0.1:8000/search", {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({query: inputText}),
-  // });
-  // const data = await response.json();
-  // console.log(data)
-  // const searchResults = data.results;
-
-  //  displayResults(searchResults);
+    updatePrices(data.results, price_usd);
 }
 
+function updatePrices(prices, price_usd) {
+  const table = document.getElementById("resultsTable");
+    const tbody = table.querySelector("tbody");
+    if (tbody) {
+        table.removeChild(tbody);
+    }
 
-function updatePrices(result) {
-    const table = document.getElementById("second-result-table");
-    table.innerHTML = `
-        <tr>
-            <th>Price UK</th>
-            <th>Price GER</th>
-            <th>Price CAN</th>
-        </tr>
-        <tr>
-        </tr>
-    `;
-    const row = table.rows[1];
-    
-    const price_uk = document.createElement("td");
-    price_uk.textContent = result.price_uk;
-    row.appendChild(price_uk);
+    // Add header row to the table
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th>Price (USD)</th>
+      <th>Price (UK)</th>
+      <th>Price (DE)</th>
+      <th>Price (CA)</th>
+    </tr>
+  `;
+  table.appendChild(thead);
 
-    const price_de = document.createElement("td");
-    price_de.textContent = result.price_de;
-    row.appendChild(price_de);
+  const tbodyNew = document.createElement("tbody");
+  // Add row with prices to the table
+  const row = document.createElement("tr");
+  const priceUsdCell = document.createElement("td");
+  priceUsdCell.textContent = price_usd;
+  row.appendChild(priceUsdCell);
 
-    const price_ca = document.createElement("td");
-    price_ca.textContent = result.price_ca;
-    row.appendChild(price_ca);
+  const priceUkCell = document.createElement("td");
+  priceUkCell.textContent = prices.price_uk;
+  row.appendChild(priceUkCell);
 
+  const priceDeCell = document.createElement("td");
+  priceDeCell.textContent = prices.price_de;
+  row.appendChild(priceDeCell);
+
+  const priceCaCell = document.createElement("td");
+  priceCaCell.textContent = prices.price_ca;
+
+  row.appendChild(priceCaCell);
+  tbodyNew.appendChild(row);
+
+    table.appendChild(tbodyNew);
 }
-
-
-  // tableBody.innerHTML = "";
-  // if (results.length === 0) {
-  //   tableBody.innerHTML = "<tr><td colspan='7'>No results found</td></tr>";
-  // } else {
-  //   results.forEach((result, inx) => {
-  //     const row = "<tr>" +
-  //             "<td>" + result.title + "</td>" +
-  //             "<td>" + result.rating + "</td>" +
-  //             "<td><img src='" + result.image_link + "'/></td>" +
-  //             "<td class='price_usd'>" + result.price_usd + "</td>" +
-  //             "<td class='price_uk'></td>" +
-  //             "<td class='price_ger'></td>" +
-  //             "<td class='price_can'></td>" +
-  //             "</tr>";
-  //     tableBody.innerHTML += row;
-  //     getPrices(results[i].asin);
-  //   });
-  // }
 
 </script>
 </body>
