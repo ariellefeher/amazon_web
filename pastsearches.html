@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Searches</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <h1>Past Searches</h1>
+    <button onclick="location.href='homepage.html'">Back to Homepage</button>
+
+    <button id="load-search-history-btn">Load Search History</button>
+    <script>
+        document.querySelector("#load-search-history-btn").addEventListener("click", async function () {
+            const response = await fetch("http://127.0.0.1:8000/search_history", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+            });
+
+            const search_history = await response.json();
+    
+            const table = document.getElementById("search-history-table");
+            const tbody = table.getElementsByTagName("tbody")[0];
+    
+            search_history.forEach((search) => {
+                const row = tbody.insertRow();
+                row.insertCell().innerText = search.query;
+                row.insertCell().innerText = search.time;
+                row.insertCell().innerText = search.item_name;
+                row.insertCell().innerText = search.amazon_com_price;
+                row.insertCell().innerText = search.amazon_co_uk_price;
+                row.insertCell().innerText = search.amazon_de_price;
+                row.insertCell().innerText = search.amazon_ca_price;
+            });
+    
+            // Disable the button after loading the search history
+            this.disabled = true;
+        });
+    </script>
+
+    <table border="1" id = "search-history-table">
+        <thead>
+            <tr>
+                <th>Query</th>
+                <th>Time</th>
+                <th>Item Name</th>
+                <th>Amazon.com Price</th>
+                <th>Amazon.co.uk Price</th>
+                <th>Amazon.de Price</th>
+                <th>Amazon.ca Price</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import asyncio
 import requests
+import sqlite3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,6 +8,11 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import urllib.parse
 from forex_python.converter import CurrencyRates
+import aiofiles
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
 
 app = FastAPI()
 
@@ -17,6 +23,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Connect to SQLite database
+conn = sqlite3.connect("search_history.db")
+cursor = conn.cursor()
+
+# Create table if not exists
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS search_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT,
+        time TEXT,
+        asin TEXT NOT NULL,
+        item_name TEXT,
+        price_usd REAL,
+        price_uk REAL,
+        price_de REAL,
+        price_ca REAL
+    )
+""")
+conn.commit()
+
+# Initialize the Jinja2 templates
+templates = Jinja2Templates(directory=".")
 
 # Search results data
 search_results = []
@@ -128,8 +157,8 @@ async def search(request_body: dict):
             image_link = image_element['src']
             print("Image Link: " + image_link)
 
-            search_results.append({"title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
-            # search_results.append(Amazon_Item(title, rating, asin, price_usd, image_link))
+            record_id = save_search_to_db(search_item, asin, title, price_usd)
+            search_results.append({"record_ud": record_id, "title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
  
     # Return search results as JSON response
     print(type(search_results))
@@ -144,6 +173,10 @@ async def prices(request_body: dict):
     if not asin:
         return JSONResponse(content={"error": "Request body required"}, status_code=400)
    
+    record = find_record_by_asin(asin)
+    if not record:
+        return JSONResponse(content={"error": "Product not found in database"}, status_code=404)
+
     #PRICE COMPARISON: Extract prices from Amazon.co.uk, Amazon.de, and Amazon.ca
     prices = []
     # url_usa =  f"https://www.amazon.com/dp/{asin}"      
@@ -187,6 +220,9 @@ async def prices(request_body: dict):
     final_price_ca = convert_to_usd(price_ca, "CAD") if price_ca else "Not Found"
     print("Price in CA: " + str(final_price_ca))
 
+        # Update the prices in the SQLite database
+    update_prices_in_db(record[0], final_price_uk, final_price_de, final_price_ca)
+
     # prices.append({"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca})
     return JSONResponse(content={"results": {"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca}})
     
@@ -197,17 +233,89 @@ def convert_to_usd(price: float, country: str) -> float:
     while True:
         try:
             rate = c.get_rate(country, 'USD', date)
-            return price * rate
+            converted_price = price * rate
+            return round(converted_price, 2)
         
         except Exception as e:
             date = timedelta(days = 1)
     
+# Save search result to the SQLite database
+def save_search_to_db(query, asin, item_name, amazon_com_price):
+    time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+        INSERT INTO search_history (query, time, asin, item_name, price_usd)
+        VALUES (?, ?, ?, ?, ?)
+    """, (query, time, asin, item_name, amazon_com_price))
+    conn.commit()
+    return cursor.lastrowid
 
-class Amazon_Item:
-    def __init__(self, title, rating, asin, price_usd, image_link):
-        self.title = title
-        self.rating = rating
-        self.asin = asin
-        self.price_usd = price_usd
-        self.image_link = image_link
+# Function to find a record in the database by ASIN
+def find_record_by_asin(asin):
+    cursor.execute("""
+        SELECT * FROM search_history WHERE asin = ?
+    """, (asin,))
+    return cursor.fetchone()
+
+
+def update_prices_in_db(record_id, amazon_co_uk_price, amazon_de_price, amazon_ca_price):
+    cursor.execute("""
+        UPDATE search_history
+        SET price_uk = ?, price_de = ?, price_ca = ?
+        WHERE id = ?
+    """, (amazon_co_uk_price, amazon_de_price, amazon_ca_price, record_id))
+    conn.commit()
+
+  # Function to get search history from the SQLite database
+def get_search_history():
+    cursor.execute("""
+        SELECT * FROM search_history
+    """)
+    return cursor.fetchall()  
+
+@app.get("/pastsearches")
+async def past_searches(request: Request):
+    return templates.TemplateResponse("pastsearches.html", {"request": request})
+
+    # cursor.execute("SELECT * FROM search_history")
+    # search_history = cursor.fetchall()
+    # search_history_data = [
+    #     {
+    #         "id": record[0],
+    #         "query": record[1],
+    #         "time": record[2],
+    #         "asin": record[3],
+    #         "item_name": record[4],
+    #         "amazon_com_price": record[5],
+    #         "amazon_co_uk_price": record[6],
+    #         "amazon_de_price": record[7],
+    #         "amazon_ca_price": record[8],
+    #     }
+    #     for record in search_history
+    # ]
+    # print(search_history_data)  # Add this line to print the data
+    # return templates.TemplateResponse("pastsearches.html", {"request": request, "search_history": search_history_data})
+
+@app.get("/search_history")
+async def search_history():
+    cursor.execute("SELECT * FROM search_history")
+    search_history = [
+        {
+            "id": row[0],
+            "query": row[1],
+            "time": row[2],
+            "item_name": row[3],
+            "amazon_com_price": row[4],
+            "amazon_co_uk_price": row[5],
+            "amazon_de_price": row[6],
+            "amazon_ca_price": row[7],
+        }
+        for row in cursor.fetchall()
+    ]
+    return search_history
+
+# @app.get("/pastsearches", response_class=HTMLResponse)
+# async def past_searches(request: Request):
+#     search_history = get_search_history()
+#     return templates.TemplateResponse("pastsearches.html", {"request": request, "search_history": search_history})
+
 

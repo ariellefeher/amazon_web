@@ -3,12 +3,13 @@
 <html>
 <head>
   <title>Amazon Price Comparison</title>
+    <link rel="stylesheet" href="main.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
   <h1>Amazon Price Comparison</h1>
-  
-  <a class="nav-link" href="pastsearches.html">Past Searches</a><br><br>
+
+  <button onclick="location.href='pastsearches.html'">Past Searches</button> <br> <br>
 
   <label>Search Item:</label><br>
 
@@ -67,9 +68,6 @@ function displayResults(results) {
 
         const titleCell = document.createElement("td");
         titleCell.textContent = result.title;
-        titleCell.addEventListener("click", () => {
-            getPrices(result.asin);
-        });
         row.appendChild(titleCell);
 
         const ratingCell = document.createElement("td");
