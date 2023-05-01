@@ -123,7 +123,7 @@ async function getPrices(asin, price_usd) {
 }
 
 function updatePrices(prices, price_usd) {
-  const table = document.getElementById("resultsTable");
+  const table = document.getElementById("priceTable");
     const tbody = table.querySelector("tbody");
     if (tbody) {
         table.removeChild(tbody);
