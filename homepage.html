@@ -9,7 +9,7 @@
   
   <a class="nav-link" href="pastsearches.html">Past Searches</a><br><br>
 
-  <label for="searchText">Search Item:</label><br>
+  <label>Search Item:</label><br>
 
 <form id="searchForm">
   <input type="text" id="searchInput">
@@ -46,6 +46,7 @@ document.getElementById("searchForm").addEventListener("submit", async (event) =
 
    displayResults(searchResults);
 });
+
 function displayResults(results) {
     const table = document.getElementById("resultsTable");
     const tbody = table.querySelector("tbody");
@@ -73,6 +74,9 @@ function displayResults(results) {
 
         const titleCell = document.createElement("td");
         titleCell.textContent = result.title;
+        titleCell.addEventListener("click", () => {
+            getPrices(result.asin);
+        });
         row.appendChild(titleCell);
 
         const ratingCell = document.createElement("td");
@@ -88,11 +92,21 @@ function displayResults(results) {
         row.appendChild(priceUsdCell);
 
         const imageCell = document.createElement("td");
+        const imageDiv = document.createElement("div");
         const image = document.createElement("img");
         image.src = result.image_link;
         image.width = 64;
         image.height = 64;
-        imageCell.appendChild(image);
+        imageDiv.appendChild(image);
+
+        const button = document.createElement("button");
+        button.textContent = "Get Prices";
+        button.addEventListener("click", () => {
+            getPrices(result.asin);
+        });
+        imageDiv.appendChild(button);
+
+        imageCell.appendChild(imageDiv);
         row.appendChild(imageCell);
 
         tbodyNew.appendChild(row);
@@ -101,72 +115,27 @@ function displayResults(results) {
     table.appendChild(tbodyNew);
 }
 
-// function displayResults(results) {
-//   const table = document.getElementById("resultsTable");
-//   const tbody = table.querySelector("tbody");
-//   if (tbody) {
-//     table.removeChild(tbody);
-//   }
-//
-//   // Add header row to the table
-//   const thead = document.createElement("thead");
-//   thead.innerHTML = `
-//     <tr>
-//       <th>Name</th>
-//       <th>Rating</th>
-//       <th>Image</th>
-//       <th>Price USA</th>
-//       <th>Price UK</th>
-//       <th>Price GER</th>
-//       <th>Price CAN</th>
-//     </tr>
-//   `;
-//   table.appendChild(thead);
-//
-//   // Add rows to the table
-//   results.forEach((result, inx) => {
-//     const row = document.createElement("tr");
-//
-//     const nameCell = document.createElement("td");
-//     const nameButton = document.createElement("button");
-//     nameButton.textContent = result.title;
-//     nameButton.id = inx + "btn";
-//     nameButton.addEventListener("click", getPrices);
-//     nameCell.appendChild(nameButton);
-//     row.appendChild(nameCell);
-//
-//     const rating = document.createElement("td");
-//     rating.textContent = result.rating;
-//     row.appendChild(rating);
-//
-//
-//     const imageCell = document.createElement("td");
-//     const image = document.createElement("img");
-//     image.src = result.image_link;
-//     image.width = 64;
-//     image.height = 64;
-//     imageCell.appendChild(image);
-//     row.appendChild(imageCell);
-//
-//     const price_usd = document.createElement("td");
-//     price_usd.textContent = result.price_usd;
-//     row.appendChild(price_usd);
-//
-//     tbody.appendChild(row);
-//   });
-//
-//   table.appendChild(tbody);
-// }
-
-async function getPrices(event) {
-    const list_item_index = parseInt(event.target.id);
+async function getPrices(asin) {
     const response = await fetch("http://127.0.0.1:8000/prices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({query: inputText}),
+      body: JSON.stringify({query: asin}),
   });
   const data = await response.json();
-    updatePrices(data.content);
+    updatePrices(data.results);
+
+  //   event.preventDefault();
+  // const inputText = document.getElementById("searchInput").value;
+  // const response = await fetch("http://127.0.0.1:8000/search", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify({query: inputText}),
+  // });
+  // const data = await response.json();
+  // console.log(data)
+  // const searchResults = data.results;
+
+  //  displayResults(searchResults);
 }
 
 
