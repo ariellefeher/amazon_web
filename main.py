@@ -1,4 +1,3 @@
-import asyncio
 import requests
 import sqlite3
 from fastapi import FastAPI
@@ -8,11 +7,8 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import urllib.parse
 from forex_python.converter import CurrencyRates
-import aiofiles
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
 
 app = FastAPI()
 
@@ -161,10 +157,7 @@ async def search(request_body: dict):
             search_results.append({"record_ud": record_id, "title": title, "rating": rating, "asin": asin, "price_usd":price_usd, "image_link": image_link})
  
     # Return search results as JSON response
-    print(type(search_results))
-    print(search_results)
     return JSONResponse(content={"results": search_results})
-    # return JSONResponse(content=search_results)
 
 @app.post("/prices")
 async def prices(request_body: dict):
@@ -179,37 +172,30 @@ async def prices(request_body: dict):
 
     #PRICE COMPARISON: Extract prices from Amazon.co.uk, Amazon.de, and Amazon.ca
     prices = []
-    # url_usa =  f"https://www.amazon.com/dp/{asin}"      
     url_uk = f"https://www.amazon.co.uk/dp/{asin}"
     url_de = f"https://www.amazon.de/dp/{asin}"
     url_ca = f"https://www.amazon.ca/dp/{asin}"
 
-    # response_usa = requests.get(url_usa, headers=headers)
     response_uk = requests.get(url_uk, headers=headers)
     response_de = requests.get(url_de, headers=headers)
     response_ca = requests.get(url_ca, headers=headers)
 
-    # print("USA response status code: ", response_usa.status_code)
     print("UK response status code: ", response_uk.status_code)
     print("DE response status code: ", response_de.status_code)
     print("CA response status code: ", response_ca.status_code)
 
-    # soup_usa = BeautifulSoup(response_usa.text, "html.parser")
     soup_uk = BeautifulSoup(response_uk.text, "html.parser")
     soup_de = BeautifulSoup(response_de.text, "html.parser")
     soup_ca = BeautifulSoup(response_ca.text, "html.parser")
 
-    # amazon_usa_element = soup_usa.find("span", {"class": "a-price-whole"})
     amazon_uk_element = soup_uk.find("span", {"class": "a-price-whole"})
     amazon_de_element = soup_de.find("span", {"class": "a-price-whole"})
     amazon_ca_element = soup_ca.find("span", {"class": "a-price-whole"})
             
-    # price_usa = float(amazon_usa_element.text.replace(",", "")) if amazon_usa_element else None
     price_uk = float(amazon_uk_element.text.replace(",", "")) if amazon_uk_element else None
     price_de = float(amazon_de_element.text.replace(",", "")) if amazon_de_element else None
     price_ca = float(amazon_ca_element.text.replace(",", "")) if amazon_ca_element else None
 
-    # print("Price in US: " + str(price_usa))
 
     final_price_uk = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
     print("Price in UK: " + str(final_price_uk)) 
@@ -223,7 +209,6 @@ async def prices(request_body: dict):
         # Update the prices in the SQLite database
     update_prices_in_db(record[0], final_price_uk, final_price_de, final_price_ca)
 
-    # prices.append({"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca})
     return JSONResponse(content={"results": {"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca}})
     
 
@@ -276,24 +261,6 @@ def get_search_history():
 async def past_searches(request: Request):
     return templates.TemplateResponse("pastsearches.html", {"request": request})
 
-    # cursor.execute("SELECT * FROM search_history")
-    # search_history = cursor.fetchall()
-    # search_history_data = [
-    #     {
-    #         "id": record[0],
-    #         "query": record[1],
-    #         "time": record[2],
-    #         "asin": record[3],
-    #         "item_name": record[4],
-    #         "amazon_com_price": record[5],
-    #         "amazon_co_uk_price": record[6],
-    #         "amazon_de_price": record[7],
-    #         "amazon_ca_price": record[8],
-    #     }
-    #     for record in search_history
-    # ]
-    # print(search_history_data)  # Add this line to print the data
-    # return templates.TemplateResponse("pastsearches.html", {"request": request, "search_history": search_history_data})
 
 @app.get("/search_history")
 async def search_history():
@@ -312,10 +279,3 @@ async def search_history():
         for row in cursor.fetchall()
     ]
     return search_history
-
-# @app.get("/pastsearches", response_class=HTMLResponse)
-# async def past_searches(request: Request):
-#     search_history = get_search_history()
-#     return templates.TemplateResponse("pastsearches.html", {"request": request, "search_history": search_history})
-
-

@@ -1,68 +1,56 @@
 /* main.css */
 
+/* Set font to Amazon's official font */
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'Amazon Ember', 'Helvetica Neue', 'Helvetica', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #f0f2f5;
     line-height: 1.6;
 }
 
-.container {
-    width: 80%;
-    margin: 0 auto;
-}
-
+/* Use Amazon's primary color for header */
 h1 {
     font-size: 2rem;
     text-align: center;
     padding: 1rem;
-    background-color: #333;
+    background-color: #232f3e;
     color: #fff;
 }
 
+/* Use Amazon's secondary color for links */
 a {
     text-decoration: none;
-    color: #333;
+    color: #0066c0;
 }
 
+/* Add underline on hover */
 a:hover {
     text-decoration: underline;
 }
 
+/* Use Amazon's font weight for labels */
 label {
-    font-weight: bold;
+    font-weight: 400;
 }
 
-form {
-    background-color: #fff;
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-input[type="text"] {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin-bottom: 1rem;
-}
-
+/* Use Amazon's button styles for search button */
 button {
     display: inline-block;
-    background-color: #333;
-    color: #fff;
+    background-color: #f0c14b;
+    color: #1d1d1d;
     padding: 0.5rem 1rem;
     border: none;
     cursor: pointer;
     border-radius: 5px;
+    font-weight: 600;
 }
 
 button:hover {
-    background-color: #555;
+    background-color: #d4a007;
 }
 
+/* Use Amazon's table styles */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -70,33 +58,71 @@ table {
 }
 
 thead {
-    background-color: #333;
+    background-color: #232f3e;
     color: #fff;
 }
 
 th, td {
     padding: 0.5rem;
     text-align: left;
-    border: 1px solid #ccc;
+    border: 1px solid #ddd;
 }
 
 tr:nth-child(even) {
-    background-color: #f4f4f4;
+    background-color: #f2f2f2;
 }
 
 tr:hover {
-    background-color: #ddd;
+    background-color: #f5f5f5;
 }
 
+/* Use Amazon's box shadow for input fields */
+input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 3px;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 0 1px #a6a6a6;
+}
+
+/* Use Amazon's box shadow for form */
+form {
+    background-color: #fff;
+    padding: 1rem;
+    border: none;
+    border-radius: 3px;
+    box-shadow: 0 0 1px #a6a6a6;
+}
+
+/* Use Amazon's border radius for images */
 img {
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    border: none;
+    border-radius: 3px;
 }
 
+/* Use Amazon's styles for price table */
 .priceTable {
-    background-color: #eee;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    background-color: #f6f6f6;
+    border: none;
+    border-radius: 3px;
     width: 100%;
     margin-top: 1rem;
+    box-shadow: 0 0 1px #a6a6a6;
+}
+
+.priceTable thead {
+    background-color: #f6f6f6;
+    color: #111;
+}
+
+.priceTable th {
+    text-align: center;
+    font-weight: 400;
+}
+
+.priceTable td {
+    text-align: center;
+    font-weight: 600;
+    padding: 0.5rem;
 }
