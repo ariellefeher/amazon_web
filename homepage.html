@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,11 +19,6 @@
  <br> <br>
 
 <table id="resultsTable">
-  <thead>
-  </thead>
-</table>
-
-<table id="priceTable">
   <thead>
   </thead>
 </table>
@@ -99,7 +95,7 @@ function displayResults(results) {
         const button = document.createElement("button");
         button.textContent = "Get Prices";
         button.addEventListener("click", () => {
-            getPrices(result.asin, result.price_usd);
+            getPrices(result.asin, result.price_usd, row);
         });
         imageDiv.appendChild(button);
 
@@ -112,24 +108,24 @@ function displayResults(results) {
     table.appendChild(tbodyNew);
 }
 
-async function getPrices(asin, price_usd) {
+async function getPrices(asin, price_usd, row) {
     const response = await fetch("http://127.0.0.1:8000/prices", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({query: asin}),
-  });
-  const data = await response.json();
-    updatePrices(data.results, price_usd);
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({query: asin}),
+});
+const data = await response.json();
+updatePrices(data.results, price_usd, row);
 }
 
-function updatePrices(prices, price_usd) {
-  const table = document.getElementById("priceTable");
-    const tbody = table.querySelector("tbody");
-    if (tbody) {
-        table.removeChild(tbody);
-    }
+function updatePrices(prices, price_usd, row) {
+  const priceRow = document.createElement("tr");
+  const priceCell = document.createElement("td");
+  priceCell.colSpan = 5;
 
-    // Add header row to the table
+  const priceTable = document.createElement("table");
+
+  // Add header row to the table
   const thead = document.createElement("thead");
   thead.innerHTML = `
     <tr>
@@ -139,30 +135,37 @@ function updatePrices(prices, price_usd) {
       <th>Price (CA)</th>
     </tr>
   `;
-  table.appendChild(thead);
+  priceTable.appendChild(thead);
 
   const tbodyNew = document.createElement("tbody");
   // Add row with prices to the table
-  const row = document.createElement("tr");
+  const newRow = document.createElement("tr");
   const priceUsdCell = document.createElement("td");
   priceUsdCell.textContent = price_usd;
-  row.appendChild(priceUsdCell);
+  newRow.appendChild(priceUsdCell);
 
   const priceUkCell = document.createElement("td");
   priceUkCell.textContent = prices.price_uk;
-  row.appendChild(priceUkCell);
+  newRow.appendChild(priceUkCell);
 
   const priceDeCell = document.createElement("td");
   priceDeCell.textContent = prices.price_de;
-  row.appendChild(priceDeCell);
+  newRow.appendChild(priceDeCell);
 
   const priceCaCell = document.createElement("td");
   priceCaCell.textContent = prices.price_ca;
 
-  row.appendChild(priceCaCell);
-  tbodyNew.appendChild(row);
+  newRow.appendChild(priceCaCell);
+  tbodyNew.appendChild(newRow);
 
-    table.appendChild(tbodyNew);
+  priceTable.appendChild(tbodyNew);
+
+  priceCell.appendChild(priceTable);
+  priceRow.appendChild(priceCell);
+
+  const resultsTable = document.getElementById("resultsTable");
+  const tbody = resultsTable.querySelector("tbody");
+  tbody.insertBefore(priceRow, row.nextSibling);
 }
 
 </script>
