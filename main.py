@@ -42,6 +42,16 @@ cursor.execute("""
 """)
 conn.commit()
 
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_search_counts (
+        ip TEXT,
+        date TEXT,
+        count INTEGER,
+        PRIMARY KEY (ip, date)
+    )
+""")
+conn.commit()
+
 # Initialize the Jinja2 templates
 templates = Jinja2Templates(directory=".")
 
@@ -60,22 +70,25 @@ user_search_counts = {}
 # Middleware to track user search counts
 @app.middleware("http")
 async def track_user_search_counts(request, call_next):
-    now = datetime.now().date().isoformat()
-    # print("request: ", request)
     if request.url.path == "/search" and request.method == "POST":
         ip = request.client.host
+        now = datetime.now().date().isoformat()
 
-        if ip not in user_search_counts:
-            user_search_counts[ip] = {now: 0}
-
-        elif now not in user_search_counts[ip]:
-            user_search_counts[ip][now] = 0
-
-        user_search_counts[ip][now] += 1
+        cursor.execute("SELECT count FROM user_search_counts WHERE ip = ? AND date = ?", (ip, now))
+        row = cursor.fetchone()
+        current_count = row[0] if row else 0
 
         # Check if user has exceeded the maximum number of searches per day
-        if user_search_counts[ip][now] > max_searches_per_day:
-            return JSONResponse(content={"error": "Search limit exceeded for today"}, status_code=429)
+        if current_count >= max_searches_per_day:
+            return JSONResponse(content={"error": "Daily searches cap reached. Consider upgrading to the premium service in order to search for more items."}, status_code=429)
+
+        # Update user search count
+        if row:
+            cursor.execute("UPDATE user_search_counts SET count = count + 1 WHERE ip = ? AND date = ?", (ip, now))
+        else:
+            cursor.execute("INSERT INTO user_search_counts (ip, date, count) VALUES (?, ?, 1)", (ip, now))
+
+        conn.commit()
 
     response = await call_next(request)
     return response
@@ -106,17 +119,6 @@ async def search(request_body: dict):
     response = requests.get(url, headers=headers)
     print("response status code: ", response.status_code)
     print("response content: ", response.text[:100])
-    
-        # # DEBUG:  work on mockup html data to avoid sending too many request to Amazon 
-        # response_mockup_path = "/Users/ariel/Downloads/mockup.txt"
-        # with open(response_mockup_path, "w") as fh:
-        #     fh.write(response.text)
-
-        # response_text_mockup = ""
-        # with open(response_mockup_path, "r") as fh:
-        #     response_text_mockup = fh.read()
-        
-        # soup = BeautifulSoup(response_text_mockup, "html.parser")
 
     # Parse the HTML response
     soup = BeautifulSoup(response.text, "html.parser")
