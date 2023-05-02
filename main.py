@@ -1,5 +1,7 @@
 import requests
 import sqlite3
+import httpx
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -159,6 +161,16 @@ async def search(request_body: dict):
     # Return search results as JSON response
     return JSONResponse(content={"results": search_results})
 
+async def fetch_price(url: str, headers: dict) -> str:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, headers=headers)
+        if response.status_code == httpx.codes.OK:
+            soup = BeautifulSoup(response.text, "html.parser")
+            price_element = soup.find("span", {"class": "a-price-whole"})
+            if price_element:
+                return float(price_element.text.replace(",", ""))
+    return None
+
 @app.post("/prices")
 async def prices(request_body: dict):
     print("received payload: ", request_body)
@@ -176,27 +188,12 @@ async def prices(request_body: dict):
     url_de = f"https://www.amazon.de/dp/{asin}"
     url_ca = f"https://www.amazon.ca/dp/{asin}"
 
-    response_uk = requests.get(url_uk, headers=headers)
-    response_de = requests.get(url_de, headers=headers)
-    response_ca = requests.get(url_ca, headers=headers)
-
-    print("UK response status code: ", response_uk.status_code)
-    print("DE response status code: ", response_de.status_code)
-    print("CA response status code: ", response_ca.status_code)
-
-    soup_uk = BeautifulSoup(response_uk.text, "html.parser")
-    soup_de = BeautifulSoup(response_de.text, "html.parser")
-    soup_ca = BeautifulSoup(response_ca.text, "html.parser")
-
-    amazon_uk_element = soup_uk.find("span", {"class": "a-price-whole"})
-    amazon_de_element = soup_de.find("span", {"class": "a-price-whole"})
-    amazon_ca_element = soup_ca.find("span", {"class": "a-price-whole"})
-            
-    price_uk = float(amazon_uk_element.text.replace(",", "")) if amazon_uk_element else None
-    price_de = float(amazon_de_element.text.replace(",", "")) if amazon_de_element else None
-    price_ca = float(amazon_ca_element.text.replace(",", "")) if amazon_ca_element else None
-
-
+    price_uk, price_de, price_ca = await asyncio.gather(
+            fetch_price(url_uk, headers),
+            fetch_price(url_de, headers),
+            fetch_price(url_ca, headers),
+        )
+    
     final_price_uk = convert_to_usd(price_uk, "GBP") if price_uk else "Not Found"
     print("Price in UK: " + str(final_price_uk)) 
 
@@ -206,11 +203,10 @@ async def prices(request_body: dict):
     final_price_ca = convert_to_usd(price_ca, "CAD") if price_ca else "Not Found"
     print("Price in CA: " + str(final_price_ca))
 
-        # Update the prices in the SQLite database
+    # Update the prices in the SQLite database
     update_prices_in_db(record[0], final_price_uk, final_price_de, final_price_ca)
 
     return JSONResponse(content={"results": {"price_uk": final_price_uk, "price_de":final_price_de, "price_ca": final_price_ca}})
-    
 
 def convert_to_usd(price: float, country: str) -> float:
     c = CurrencyRates()
